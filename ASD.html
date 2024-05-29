@@ -1,0 +1,266 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASD</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__left">
+    <div class="stackedit__toc">
+      
+<ul>
+<li><a href="#monitoramento-de-estabilidade-de-aplicações-com-lstm-e-kmeans">Monitoramento de Estabilidade de Aplicações com LSTM e KMeans</a>
+<ul>
+<li><a href="#introdução">Introdução</a></li>
+<li><a href="#importar-bibliotecas-necessárias">1. Importar Bibliotecas Necessárias</a></li>
+<li><a href="#carregar-e-preparar-os-dados">2. Carregar e Preparar os Dados</a></li>
+<li><a href="#criar-o-modelo-de-lstm">3. Criar o Modelo de LSTM</a></li>
+<li><a href="#fazer-previsões-e-analisar-estabilidade">4. Fazer Previsões e Analisar Estabilidade</a></li>
+<li><a href="#realocar-recursos-ou-recomendar-ações-com-base-nas-previsões">5. Realocar Recursos ou Recomendar Ações com Base nas Previsões</a></li>
+<li><a href="#criar-uma-aplicação-para-teste">6. Criar uma Aplicação para Teste</a></li>
+<li><a href="#conclusão">Conclusão</a></li>
+</ul>
+</li>
+</ul>
+
+    </div>
+  </div>
+  <div class="stackedit__right">
+    <div class="stackedit__html">
+      <h1 id="monitoramento-de-estabilidade-de-aplicações-com-lstm-e-kmeans">Monitoramento de Estabilidade de Aplicações com LSTM e KMeans</h1>
+<h2 id="introdução">Introdução</h2>
+<p>Neste documento, vamos abordar a construção de um sistema de monitoramento para analisar a estabilidade de uma aplicação utilizando dados históricos. Utilizaremos LSTM (Long Short-Term Memory) para prever a estabilidade da aplicação e KMeans para agrupar produtos. Vamos seguir os seguintes passos:</p>
+<ol>
+<li>Importar bibliotecas necessárias.</li>
+<li>Carregar e preparar os dados.</li>
+<li>Criar o modelo de LSTM.</li>
+<li>Fazer previsões e analisar estabilidade.</li>
+<li>Realocar recursos ou recomendar ações com base nas previsões.</li>
+<li>Criar uma aplicação para teste.</li>
+</ol>
+<h3 id="encontrar-uma-base-de-dados">Encontrar uma Base de Dados</h3>
+<p>Para treinar o modelo, você precisa de uma base de dados que contenha métricas de desempenho de aplicações ao longo do tempo. Essa base de dados deve incluir registros de momentos em que a aplicação estava estável e quando apresentou problemas.</p>
+<h4 id="fontes-de-dados">Fontes de Dados</h4>
+<ul>
+<li><strong>Logs de servidores</strong>: Muitas empresas mantêm logs detalhados de seus servidores, incluindo métricas de uso de CPU, memória, latência, tráfego de rede, etc.</li>
+<li><strong>Simulações e Benchmarking</strong>: Simulações de carga e benchmarking podem gerar dados úteis. Ferramentas como Apache JMeter podem ser usadas para criar essas simulações.</li>
+<li><strong>Datasets Públicos</strong>: Existem alguns datasets públicos que podem conter informações relevantes. Sites como Kaggle ou datasets de benchmarks podem ser úteis.</li>
+</ul>
+<p>Exemplo de como começar a buscar datasets públicos:</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token comment"># Kaggle API</span>
+!pip install kaggle
+
+<span class="token comment"># Copiar sua chave API do Kaggle</span>
+!mkdir <span class="token operator">-</span>p <span class="token operator">~</span><span class="token operator">/</span><span class="token punctuation">.</span>kaggle
+!cp kaggle<span class="token punctuation">.</span>json <span class="token operator">~</span><span class="token operator">/</span><span class="token punctuation">.</span>kaggle<span class="token operator">/</span>
+!chmod <span class="token number">600</span> <span class="token operator">~</span><span class="token operator">/</span><span class="token punctuation">.</span>kaggle<span class="token operator">/</span>kaggle<span class="token punctuation">.</span>json
+
+<span class="token comment"># Procurar datasets relevantes</span>
+!kaggle datasets <span class="token builtin">list</span> <span class="token operator">-</span>s <span class="token string">"server logs"</span>
+</code></pre>
+<h3 id="treinar-o-modelo-e-colocar-para-rodar">2. Treinar o Modelo e Colocar para Rodar</h3>
+<h4 id="treinar-o-modelo">Treinar o Modelo</h4>
+<p>Use um modelo de previsão de séries temporais, como LSTM, treinado com suas métricas de desempenho históricas. Já cobrimos a criação e treinamento de um modelo LSTM acima.</p>
+<h4 id="colocar-para-rodar">Colocar para Rodar</h4>
+<p>Para colocar o modelo em produção, você pode utilizar várias abordagens. O uso de containers (como Docker) e orquestradores de containers (como Kubernetes) é comum.</p>
+<p>Exemplo de um pipeline básico usando Docker:</p>
+<pre class=" language-dockerfile"><code class="prism  language-dockerfile"><span class="token comment"># Dockerfile</span>
+<span class="token keyword">FROM</span> python<span class="token punctuation">:</span>3.8<span class="token punctuation">-</span>slim
+
+<span class="token keyword">WORKDIR</span> /app
+
+<span class="token keyword">COPY</span> . /app
+
+<span class="token keyword">RUN</span> pip install <span class="token punctuation">-</span>r requirements.txt
+
+<span class="token keyword">CMD</span> <span class="token punctuation">[</span><span class="token string">"python"</span><span class="token punctuation">,</span> <span class="token string">"monitor_application.py"</span><span class="token punctuation">]</span>
+
+</code></pre>
+<h2 id="importar-bibliotecas-necessárias">1. Importar Bibliotecas Necessárias</h2>
+<p>Para começarmos, precisamos importar as bibliotecas necessárias. Isso inclui bibliotecas para manipulação de dados, visualização e construção de modelos.</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token keyword">import</span> pandas <span class="token keyword">as</span> pd
+<span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">import</span> matplotlib<span class="token punctuation">.</span>pyplot <span class="token keyword">as</span> plt
+<span class="token keyword">import</span> seaborn <span class="token keyword">as</span> sns
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>preprocessing <span class="token keyword">import</span> MinMaxScaler
+<span class="token keyword">import</span> tensorflow <span class="token keyword">as</span> tf
+<span class="token keyword">from</span> tensorflow<span class="token punctuation">.</span>keras<span class="token punctuation">.</span>models <span class="token keyword">import</span> Sequential
+<span class="token keyword">from</span> tensorflow<span class="token punctuation">.</span>keras<span class="token punctuation">.</span>layers <span class="token keyword">import</span> LSTM<span class="token punctuation">,</span> Dense<span class="token punctuation">,</span> Dropout
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>feature_extraction<span class="token punctuation">.</span>text <span class="token keyword">import</span> TfidfVectorizer
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>neighbors <span class="token keyword">import</span> NearestNeighbors
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>cluster <span class="token keyword">import</span> KMeans
+</code></pre>
+<h2 id="carregar-e-preparar-os-dados">2. Carregar e Preparar os Dados</h2>
+<h3 id="montar-o-google-drive-e-carregar-os-dados">Montar o Google Drive e Carregar os Dados</h3>
+<p>Vamos carregar os dados históricos de desempenho da aplicação. Para isso, montamos o Google Drive e carregamos o arquivo CSV</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token keyword">from</span> google<span class="token punctuation">.</span>colab <span class="token keyword">import</span> drive
+drive<span class="token punctuation">.</span>mount<span class="token punctuation">(</span><span class="token string">'/content/drive'</span><span class="token punctuation">)</span>
+
+df <span class="token operator">=</span> pd<span class="token punctuation">.</span>read_csv<span class="token punctuation">(</span><span class="token string">'/content/drive/MyDrive/Colab Notebooks/performance_data.csv'</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Visualizar os primeiros dados</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>df<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Pré-processamento</span>
+df<span class="token punctuation">[</span><span class="token string">'timestamp'</span><span class="token punctuation">]</span> <span class="token operator">=</span> pd<span class="token punctuation">.</span>to_datetime<span class="token punctuation">(</span>df<span class="token punctuation">[</span><span class="token string">'timestamp'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+df<span class="token punctuation">.</span>set_index<span class="token punctuation">(</span><span class="token string">'timestamp'</span><span class="token punctuation">,</span> inplace<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Normalização dos dados</span>
+scaler <span class="token operator">=</span> MinMaxScaler<span class="token punctuation">(</span><span class="token punctuation">)</span>
+scaled_data <span class="token operator">=</span> scaler<span class="token punctuation">.</span>fit_transform<span class="token punctuation">(</span>df<span class="token punctuation">)</span>
+
+<span class="token comment"># Divisão em dados de treinamento e teste</span>
+train_size <span class="token operator">=</span> <span class="token builtin">int</span><span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>scaled_data<span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">0.8</span><span class="token punctuation">)</span>
+train_data <span class="token operator">=</span> scaled_data<span class="token punctuation">[</span><span class="token punctuation">:</span>train_size<span class="token punctuation">]</span>
+test_data <span class="token operator">=</span> scaled_data<span class="token punctuation">[</span>train_size<span class="token punctuation">:</span><span class="token punctuation">]</span>
+
+<span class="token comment"># Função para criar janelas de sequência de tempo para o LSTM</span>
+<span class="token keyword">def</span> <span class="token function">create_sequences</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> seq_length<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    sequences <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    labels <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span> <span class="token operator">-</span> seq_length<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        sequences<span class="token punctuation">.</span>append<span class="token punctuation">(</span>data<span class="token punctuation">[</span>i<span class="token punctuation">:</span>i<span class="token operator">+</span>seq_length<span class="token punctuation">]</span><span class="token punctuation">)</span>
+        labels<span class="token punctuation">.</span>append<span class="token punctuation">(</span>data<span class="token punctuation">[</span>i<span class="token operator">+</span>seq_length<span class="token punctuation">]</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> np<span class="token punctuation">.</span>array<span class="token punctuation">(</span>sequences<span class="token punctuation">)</span><span class="token punctuation">,</span> np<span class="token punctuation">.</span>array<span class="token punctuation">(</span>labels<span class="token punctuation">)</span>
+
+<span class="token comment"># Criar sequências de treinamento e teste</span>
+seq_length <span class="token operator">=</span> <span class="token number">60</span>  <span class="token comment"># Usar 60 timesteps anteriores para prever o próximo timestep</span>
+X_train<span class="token punctuation">,</span> y_train <span class="token operator">=</span> create_sequences<span class="token punctuation">(</span>train_data<span class="token punctuation">,</span> seq_length<span class="token punctuation">)</span>
+X_test<span class="token punctuation">,</span> y_test <span class="token operator">=</span> create_sequences<span class="token punctuation">(</span>test_data<span class="token punctuation">,</span> seq_length<span class="token punctuation">)</span>
+
+</code></pre>
+<h2 id="criar-o-modelo-de-lstm">3. Criar o Modelo de LSTM</h2>
+<p>Definimos e compilamos a arquitetura do modelo LSTM, e em seguida, treinamos o modelo com os dados históricos.</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token comment"># Definir o modelo LSTM</span>
+model <span class="token operator">=</span> Sequential<span class="token punctuation">(</span><span class="token punctuation">)</span>
+model<span class="token punctuation">.</span>add<span class="token punctuation">(</span>LSTM<span class="token punctuation">(</span><span class="token number">50</span><span class="token punctuation">,</span> return_sequences<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span> input_shape<span class="token operator">=</span><span class="token punctuation">(</span>seq_length<span class="token punctuation">,</span> X_train<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+model<span class="token punctuation">.</span>add<span class="token punctuation">(</span>Dropout<span class="token punctuation">(</span><span class="token number">0.2</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+model<span class="token punctuation">.</span>add<span class="token punctuation">(</span>LSTM<span class="token punctuation">(</span><span class="token number">50</span><span class="token punctuation">,</span> return_sequences<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+model<span class="token punctuation">.</span>add<span class="token punctuation">(</span>Dropout<span class="token punctuation">(</span><span class="token number">0.2</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+model<span class="token punctuation">.</span>add<span class="token punctuation">(</span>Dense<span class="token punctuation">(</span>X_train<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+model<span class="token punctuation">.</span><span class="token builtin">compile</span><span class="token punctuation">(</span>optimizer<span class="token operator">=</span><span class="token string">'adam'</span><span class="token punctuation">,</span> loss<span class="token operator">=</span><span class="token string">'mean_squared_error'</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Treinar o modelo</span>
+history <span class="token operator">=</span> model<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>X_train<span class="token punctuation">,</span> y_train<span class="token punctuation">,</span> epochs<span class="token operator">=</span><span class="token number">20</span><span class="token punctuation">,</span> batch_size<span class="token operator">=</span><span class="token number">32</span><span class="token punctuation">,</span> validation_split<span class="token operator">=</span><span class="token number">0.2</span><span class="token punctuation">)</span>
+
+</code></pre>
+<h2 id="fazer-previsões-e-analisar-estabilidade">4. Fazer Previsões e Analisar Estabilidade</h2>
+<p>Usamos o modelo treinado para prever o estado futuro da aplicação e analisamos os resultados para determinar a estabilidade da aplicação</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token comment"># Fazer previsões</span>
+predictions <span class="token operator">=</span> model<span class="token punctuation">.</span>predict<span class="token punctuation">(</span>X_test<span class="token punctuation">)</span>
+predictions <span class="token operator">=</span> scaler<span class="token punctuation">.</span>inverse_transform<span class="token punctuation">(</span>predictions<span class="token punctuation">)</span>
+y_test <span class="token operator">=</span> scaler<span class="token punctuation">.</span>inverse_transform<span class="token punctuation">(</span>y_test<span class="token punctuation">)</span>
+
+<span class="token comment"># Analisar as previsões</span>
+plt<span class="token punctuation">.</span>figure<span class="token punctuation">(</span>figsize<span class="token operator">=</span><span class="token punctuation">(</span><span class="token number">14</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>plot<span class="token punctuation">(</span>df<span class="token punctuation">.</span>index<span class="token punctuation">[</span>train_size <span class="token operator">+</span> seq_length<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> y_test<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> color<span class="token operator">=</span><span class="token string">'blue'</span><span class="token punctuation">,</span> label<span class="token operator">=</span><span class="token string">'Valor Real'</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>plot<span class="token punctuation">(</span>df<span class="token punctuation">.</span>index<span class="token punctuation">[</span>train_size <span class="token operator">+</span> seq_length<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">,</span> predictions<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> color<span class="token operator">=</span><span class="token string">'red'</span><span class="token punctuation">,</span> label<span class="token operator">=</span><span class="token string">'Previsão'</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>title<span class="token punctuation">(</span><span class="token string">'Previsão de Desempenho da Aplicação'</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>xlabel<span class="token punctuation">(</span><span class="token string">'Data'</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>ylabel<span class="token punctuation">(</span><span class="token string">'Métrica de Desempenho'</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>legend<span class="token punctuation">(</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>show<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Calcular a porcentagem de estabilidade (por exemplo, erro médio absoluto)</span>
+mae <span class="token operator">=</span> np<span class="token punctuation">.</span>mean<span class="token punctuation">(</span>np<span class="token punctuation">.</span><span class="token builtin">abs</span><span class="token punctuation">(</span>y_test <span class="token operator">-</span> predictions<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>f<span class="token string">'Erro Médio Absoluto: {mae}'</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Analisar a estabilidade</span>
+threshold <span class="token operator">=</span> <span class="token number">0.05</span>  <span class="token comment"># Definir um limiar para considerar a aplicação estável</span>
+stable_percentage <span class="token operator">=</span> np<span class="token punctuation">.</span>mean<span class="token punctuation">(</span>np<span class="token punctuation">.</span><span class="token builtin">abs</span><span class="token punctuation">(</span>y_test <span class="token operator">-</span> predictions<span class="token punctuation">)</span> <span class="token operator">&lt;</span> threshold<span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token number">100</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>f<span class="token string">'Porcentagem de Estabilidade: {stable_percentage:.2f}%'</span><span class="token punctuation">)</span>
+
+</code></pre>
+<h2 id="realocar-recursos-ou-recomendar-ações-com-base-nas-previsões">5. Realocar Recursos ou Recomendar Ações com Base nas Previsões</h2>
+<p>Dependendo da previsão do modelo, você pode tomar várias ações:</p>
+<ul>
+<li><strong>Realocação de Recursos</strong>: Usar APIs de gerenciamento de nuvem (como AWS SDK, Google Cloud SDK) para aumentar a capacidade de servidores.</li>
+<li><strong>Alertas</strong>: Enviar alertas via email ou sistemas de mensagens (como Slack, PagerDuty).</li>
+<li><strong>Log de Sistema</strong>: Registrar eventos em sistemas de log centralizados.</li>
+<li>Exemplo de código para realocar recursos na AWS:</li>
+</ul>
+<pre class=" language-python"><code class="prism  language-python"><span class="token keyword">import</span> boto3
+
+<span class="token keyword">def</span> <span class="token function">scale_up_ec2</span><span class="token punctuation">(</span>instance_id<span class="token punctuation">,</span> new_instance_type<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    ec2 <span class="token operator">=</span> boto3<span class="token punctuation">.</span>client<span class="token punctuation">(</span><span class="token string">'ec2'</span><span class="token punctuation">)</span>
+    ec2<span class="token punctuation">.</span>stop_instances<span class="token punctuation">(</span>InstanceIds<span class="token operator">=</span><span class="token punctuation">[</span>instance_id<span class="token punctuation">]</span><span class="token punctuation">)</span>
+    ec2<span class="token punctuation">.</span>modify_instance_attribute<span class="token punctuation">(</span>InstanceId<span class="token operator">=</span>instance_id<span class="token punctuation">,</span> Attribute<span class="token operator">=</span><span class="token string">'instanceType'</span><span class="token punctuation">,</span> Value<span class="token operator">=</span>new_instance_type<span class="token punctuation">)</span>
+    ec2<span class="token punctuation">.</span>start_instances<span class="token punctuation">(</span>InstanceIds<span class="token operator">=</span><span class="token punctuation">[</span>instance_id<span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Exemplo de uso</span>
+<span class="token keyword">if</span> stability_percentage <span class="token operator">&lt;</span> <span class="token number">80</span><span class="token punctuation">:</span>  <span class="token comment"># Se a estabilidade for menor que 80%</span>
+    scale_up_ec2<span class="token punctuation">(</span><span class="token string">'i-0123456789abcdef0'</span><span class="token punctuation">,</span> <span class="token string">'t2.large'</span><span class="token punctuation">)</span>
+ 
+</code></pre>
+<h2 id="criar-uma-aplicação-para-teste">6. Criar uma Aplicação para Teste</h2>
+<h3 id="exemplo-de-uma-aplicação-simples-com-flask">Exemplo de uma Aplicação Simples com Flask</h3>
+<h4 id="passos">Passos:</h4>
+<ol>
+<li><strong>Desenvolver uma aplicação web simples</strong> (ex.: usando Flask ou Django).</li>
+<li><strong>Simular carga na aplicação</strong>: Usar ferramentas de stress test como Apache JMeter para gerar carga na aplicação.</li>
+<li><strong>Monitorar e coletar dados</strong>: Coletar dados de desempenho durante os testes para treinar e testar o modelo.</li>
+</ol>
+<pre class=" language-python"><code class="prism  language-python"><span class="token keyword">from</span> flask <span class="token keyword">import</span> Flask<span class="token punctuation">,</span> jsonify
+<span class="token keyword">import</span> time
+<span class="token keyword">import</span> random
+
+app <span class="token operator">=</span> Flask<span class="token punctuation">(</span>__name__<span class="token punctuation">)</span>
+
+@app<span class="token punctuation">.</span>route<span class="token punctuation">(</span><span class="token string">'/'</span><span class="token punctuation">)</span>
+<span class="token keyword">def</span> <span class="token function">home</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> jsonify<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"status"</span><span class="token punctuation">:</span> <span class="token string">"running"</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+@app<span class="token punctuation">.</span>route<span class="token punctuation">(</span><span class="token string">'/stress'</span><span class="token punctuation">)</span>
+<span class="token keyword">def</span> <span class="token function">stress</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># Simular carga pesada</span>
+    time<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span>random<span class="token punctuation">.</span>uniform<span class="token punctuation">(</span><span class="token number">0.5</span><span class="token punctuation">,</span> <span class="token number">2.0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> jsonify<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"status"</span><span class="token punctuation">:</span> <span class="token string">"stressed"</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
+    app<span class="token punctuation">.</span>run<span class="token punctuation">(</span>host<span class="token operator">=</span><span class="token string">'0.0.0.0'</span><span class="token punctuation">,</span> port<span class="token operator">=</span><span class="token number">5000</span><span class="token punctuation">)</span>
+
+</code></pre>
+<h3 id="simular-carga-com-apache-jmeter">Simular Carga com Apache JMeter</h3>
+<p>Utilizamos o Apache JMeter para criar um plano de teste que simula muitos usuários acessando o endpoint <code>/stress</code>.</p>
+<pre class=" language-sh"><code class="prism  language-sh"># Instalar JMeter 
+!apt-get install jmeter 
+# Executar JMeter com um plano de teste 
+!jmeter -n -t test_plan.jmx -l results.jtl
+</code></pre>
+<h3 id="monitorar-e-analisar-a-aplicação">Monitorar e Analisar a Aplicação</h3>
+<p>Use ferramentas de monitoramento como Prometheus e Grafana para monitorar a aplicação em tempo real. Coletar e visualizar dados de desempenho ajudará a ajustar e validar seu modelo.</p>
+<h4 id="integrar-prometheus-e-grafana">Integrar Prometheus e Grafana</h4>
+<ul>
+<li><strong>Prometheus</strong>: Ferramenta de monitoramento e alertas.</li>
+<li><strong>Grafana</strong>: Ferramenta de análise e visualização de dados.</li>
+</ul>
+<p><strong>Exemplo de integração básica:</strong></p>
+<ol>
+<li><strong>Instalar Prometheus e Grafana</strong></li>
+<li><strong>Configurar Prometheus para coletar métricas de sua aplicação Flask</strong></li>
+<li><strong>Configurar Grafana para visualizar essas métricas</strong></li>
+</ol>
+<pre class=" language-yaml"><code class="prism  language-yaml"><span class="token comment"># prometheus.yml</span>
+<span class="token key atrule">global</span><span class="token punctuation">:</span>
+  <span class="token key atrule">scrape_interval</span><span class="token punctuation">:</span> 15s
+
+<span class="token key atrule">scrape_configs</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">job_name</span><span class="token punctuation">:</span> <span class="token string">'flask_app'</span>
+    <span class="token key atrule">static_configs</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">targets</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'localhost:5000'</span><span class="token punctuation">]</span>
+</code></pre>
+<h2 id="conclusão">Conclusão</h2>
+<p>Implementar um sistema de monitoramento de estabilidade de aplicações envolve a coleta de dados históricos, treinamento de modelos de previsão, colocação do modelo em produção e tomada de ações baseadas nas previsões. A integração com ferramentas de monitoramento em tempo real é crucial para validar e ajustar continuamente o modelo.</p>
+<p>Este documento inclui todas as informações e exemplos de código necessários para desenvolver um sistema de monitoramento de estabilidade de aplicações usando LSTM e KMeans, e para colocar o modelo em produção, monitorar a aplicação e tomar ações proativas com base nas previsões.</p>
+<p><strong>Este documento organiza as informações e exemplos de código em um formato de artigo, com seções claras e bem definidas para cada etapa do processo.</strong></p>
+
+    </div>
+  </div>
+</body>
+
+</html>
