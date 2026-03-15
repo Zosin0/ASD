@@ -16,27 +16,27 @@ Abaixo está a organização profissional dos arquivos do projeto:
 
 ```bash
 ASD/
-├── docs/                      # Documentação e Pesquisa
-│   ├── paper.pdf              # Versão formatada do artigo
-│   ├── plots.py               # Scripts para geração de gráficos
-│   ├── research/              # Artigos de referência externa
-│   └── drafts/                # Rascunhos e ideias de desenvolvimento
-├── models/                    # Scripts de Inteligência Artificial
-│   ├── 01_train_decision_tree.py # Treinamento da Árvore de Decisão
-│   ├── 02_train_random_forest.py # Treinamento de Random Forest
-│   ├── 03_train_lstm.py          # Treinamento de LSTM (v1)
-│   ├── 04_train_lstm_advanced.py # Treinamento de LSTM (Avançado)
-│   └── trained/               # Modelos exportados (.pkl, .h5, .pkl)
-├── notebooks/                 # Desenvolvimento e Análise Exploratória
-│   └── model_development.ipynb # Jupyter Notebook principal
-├── scripts/                   # Testes e Simulações
-│   ├── 01_eval_decision_tree.py # Avaliação do modelo de Árvore de Decisão
-│   ├── 02_eval_random_forest.py # Avaliação do modelo Random Forest
-│   ├── 03_app_simulation_basic.py # Simulação web básica (v1)
-│   ├── 04_app_simulation_integrated.py # Simulação web integrada (v2)
-│   └── 05_stress_test.py      # Simulação de picos de carga (Stress Test)
-└── data/                      # Conjuntos de Dados
-    └── google.csv             # Dataset do Google Cluster Sample 2019
+├── docs/                                 # Documentação e Pesquisa
+│   ├── paper.pdf                         # Versão formatada do artigo
+│   ├── plots.py                          # Scripts para geração de gráficos
+│   ├── research/                         # Artigos de referência externa
+│   └── drafts/                           # Rascunhos e ideias de desenvolvimento
+├── models/                               # Scripts de Inteligência Artificial
+│   ├── 01_train_decision_tree.py         # Treinamento da Árvore de Decisão
+│   ├── 02_train_random_forest.py         # Treinamento de Random Forest
+│   ├── 03_train_lstm.py                  # Treinamento de LSTM (v1)
+│   ├── 04_train_lstm_advanced.py         # Treinamento de LSTM (Avançado)
+│   └── trained/                          # Modelos exportados (.pkl, .h5, .pkl)
+├── notebooks/                            # Desenvolvimento e Análise Exploratória
+│   └── model_development.ipynb           # Jupyter Notebook principal
+├── scripts/                              # Testes e Simulações
+│   ├── 01_eval_decision_tree.py          # Avaliação do modelo de Árvore de Decisão
+│   ├── 02_eval_random_forest.py          # Avaliação do modelo Random Forest
+│   ├── 03_app_simulation_basic.py        # Simulação web básica (v1)
+│   ├── 04_app_simulation_integrated.py   # Simulação web integrada (v2)
+│   └── 05_stress_test.py                 # Simulação de picos de carga (Stress Test)
+└── data/                                 # Conjuntos de Dados
+└── google.csv                            # Dataset do Google Cluster Sample 2019
 ```
 
 ---
@@ -44,7 +44,7 @@ ASD/
 ## 🚀 Como Utilizar
 
 ### 1. Preparação dos Dados
-O projeto utiliza o dataset **Google Cluster Sample 2019**, disponível em `data/google.csv`.
+O projeto utiliza o dataset **Google Cluster Sample 2019**, disponível em [`data/google.csv`](https://www.kaggle.com/datasets/derrickmwiti/google-2019-cluster-sample).
 
 ### 2. Treinamento dos Modelos
 Execute os scripts na ordem numérica para treinar e salvar os pesos em `models/trained/`:
