@@ -73,6 +73,7 @@ Para testar a inteligência do sistema em tempo real:
 *   Pedro Henrique Moreira da Silva
 
 ---
-**Curso:** Ciência da Computação - UniCEUB
-**Disciplina:** Arquitetura de Sistemas Distribuídos
-**Professor:** Msc. Fabiano Mariath D'Oliveira
+
+* **Curso:** Ciência da Computação - UniCEUB
+* **Disciplina:** Arquitetura de Sistemas Distribuídos
+* **Professor:** Msc. Fabiano Mariath D'Oliveira
